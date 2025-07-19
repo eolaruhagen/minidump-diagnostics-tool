@@ -1,0 +1,1 @@
+# minidump-diagnostics-tool
