@@ -1,0 +1,74 @@
+
+{
+  "scenario": "Faulty Third-Party Network Driver BSOD",
+  "description": "Outdated Realtek network driver (rt640x64.sys) misbehaves under high load",
+  "os": {
+    "name": "Windows 11",
+    "kernelModule": "ntoskrnl.exe"
+  },
+  "driver": {
+    "name": "Realtek PCIe GBE Family Controller",
+    "file": "rt640x64.sys",
+    "version": "pre-2020",
+    "loadedInto": "Kernel space",
+    "interfaces": ["NDIS", "netio.sys"],
+    "callbacks": ["ISR", "DPC", "PacketSend", "PacketReceive"],
+    "ioctls": ["CONFIGURE", "QUERY_STATS"]
+  },
+  "workload": {
+    "type": "Network-intensive",
+    "operations": ["LargeFileTransfer", "MultipleStreams", "SyncClients"]
+  },
+  "apiFlow": [
+    "UserMode → Winsock API",
+    "→ TDI → tcpip.sys",
+    "→ netio.sys → ndis.sys",
+    "→ rt640x64.sys"
+  ],
+  "irql": {
+    "normal": "PASSIVE_LEVEL",
+    "handler": "DISPATCH_LEVEL"
+  },
+  "bugPatterns": [
+    "UseAfterFree",
+    "InvalidPointerDereference",
+    "RaceCondition",
+    "IRQLMishandling"
+  ],
+  "fault": {
+    "routine": "RTNicIndicateReceivedPacket",
+    "context": "DPC at DISPATCH_LEVEL",
+    "error": "AccessViolation on freed buffer"
+  },
+  "bugcheck": {
+    "code": "0x0000000A",
+    "name": "IRQL_NOT_LESS_OR_EQUAL",
+    "trigger": "KeBugCheckEx",
+    "parameters": [
+      "FaultingAddress",
+      "CurrentIRQL",
+      "ExpectedIRQL"
+    ]
+  },
+  "stackTrace": [
+    "rt640x64.sys!RTNicIndicateReceivedPacket",
+    "ndis.sys!NdisMIndicateReceiveNetBufferLists",
+    "netio.sys!NetioDereferenceNetBufferList",
+    "ntoskrnl.exe!KeBugCheckEx"
+  ],
+  "memoryContext": {
+    "registers": {
+      "RAX": "0xDEADBEEF",
+      "RBX": "0x00000000"
+    },
+    "freedPattern": "0xCC or 0x00",
+    "heldLocks": ["Spinlock"]
+  },
+  "irps": ["IRP_MJ_READ", "IRP_MJ_WRITE"],
+  "systemResponse": [
+    "Write minidump",
+    "Reset network interfaces",
+    "Invoke bugcheck routine",
+    "Display BSOD"
+  ]
+}
