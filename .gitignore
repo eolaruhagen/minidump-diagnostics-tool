@@ -1,4 +1,4 @@
 .env
 .vscode
-build
-CMakeCache.txt
+/cursor_docs
+/src/__pycache__
