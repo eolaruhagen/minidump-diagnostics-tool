@@ -1,9 +1,15 @@
 from chonkie.cloud import SemanticChunker
+import numpy as np
 
 def chunk_text(text, chonkie_api_key: str) -> list[str]:
     chunker = SemanticChunker(api_key=chonkie_api_key)
     chunks = chunker.chunk(text)
     return chunks
+
+""" Aggregate all embeddings by sentence for a chunk given by a command"""
+def aggregate_chunk_embeddings(chunks):
+    embeddings = np.array([chunk.embedding for chunk in chunks])
+    return embeddings.mean(axis=0)
 
 # def get_redis_client():
 #     redis_host = os.getenv('REDIS_HOST')
