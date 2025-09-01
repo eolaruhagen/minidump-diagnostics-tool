@@ -23,7 +23,7 @@ class WindbgInterface:
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=timeout)
             full_output = result.stdout
-            print(f"📄 Full output from CDB:\n{full_output}")
+            # print(f"📄 Full output from CDB:\n{full_output}")
             
             lines = full_output.splitlines()
             
@@ -87,4 +87,5 @@ def load_config():
     load_dotenv()
     cdb_path = os.getenv('CDB_PATH')
     minidump_path = os.getenv('MINIDUMP_PATH')
-    return cdb_path, minidump_path
+    chonkie_api_key = os.getenv('CHONKIE_API_KEY')
+    return cdb_path, minidump_path, chonkie_api_key
