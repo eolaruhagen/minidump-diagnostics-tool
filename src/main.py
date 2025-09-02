@@ -1,7 +1,9 @@
 import os
 # import json # Removed as JSON file output is no longer needed
 from windbg_interface import WindbgInterface, load_config
-from chunking import chunk_text, aggregate_chunk_embeddings
+# from chunking import chunk_text, flatten_chunk_embeddings_to_document # Removed as chunking.py is deleted
+from langchain_interface import chunk_text, fetch_command_text
+from langchain_interface import create_vector_store, create_documents_from_command_chunks
 
 # --- Configuration Flags ---
 ENABLE_CHUNKING = True  # Set to False to disable chunking functionality
@@ -29,6 +31,9 @@ def main():
     commands_to_run = [
         "kv",
     ]
+    
+    vector_store = create_vector_store()
+    command_chunk_uuids = []
 
     print("\n--- ⏳ Starting Multi-Command Execution ⏳ ---")
     for command in commands_to_run:
@@ -48,7 +53,14 @@ def main():
             print(f"✨ Chunking output for '{command}' using Chonkie Cloud...")
             try:
                 chunks_data = chunk_text(parsed_output, chonkie_api_key)
-                aggregated_embeddings = aggregate_chunk_embeddings(chunks_data)
+                command_documents, command_document_uuids = create_documents_from_command_chunks(chunks_data, command, True)
+                vector_store.add_documents(command_documents)
+                command_chunk_uuids.extend(command_document_uuids)
+                print(f"📦 Command chunk UUIDs for '{command}': {command_chunk_uuids}")
+                
+                output_text = fetch_command_text(vector_store, command, "command_output", command_chunk_uuids)
+                print(f"📦 Output text for '{command}': {output_text}")
+
                 #print amount of chunks for the command ->
                 print(f"📦 Chunks for '{command}': {len(chunks_data)}")
                 #then print chunks by text value -> not  the embeddings
@@ -58,7 +70,6 @@ def main():
             except Exception as e:
                 print(f"❌ Error chunking output for '{command}': {e}")
         # --------------------------------
-    
     print("\n--- 🎉 All Commands Executed and Outputs Saved 🎉 ---")
 
 if __name__ == "__main__":
