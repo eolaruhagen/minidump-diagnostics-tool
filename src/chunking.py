@@ -1,24 +1,22 @@
 from chonkie.cloud import SemanticChunker
+from langchain_core.documents import Document
+
 import numpy as np
 
-def chunk_text(text, chonkie_api_key: str) -> list[str]:
+def chunk_text(text, chonkie_api_key: str) -> list[SemanticChunk]:
     chunker = SemanticChunker(api_key=chonkie_api_key)
     chunks = chunker.chunk(text)
     return chunks
 
 """ Aggregate all embeddings by sentence for a chunk given by a command"""
 def aggregate_chunk_embeddings(chunks):
-    embeddings = np.array([chunk.embedding for chunk in chunks])
+    # a command could have multiple chunks, each chunk has a list of sentences, which each is a list of embeddings/floats
+    # all of these must be aggregated to a single vector
+    embeddings = np.array([sentence.embedding for chunk in chunks for sentence in chunk.sentences])
+    embeddings = embeddings.flatten()
+    print(embeddings)
     return embeddings.mean(axis=0)
 
-# def get_redis_client():
-#     redis_host = os.getenv('REDIS_HOST')
-#     redis_port = os.getenv('REDIS_PORT')
-#     redis_password = os.getenv('REDIS_PASSWORD')
-#     redis_client = Redis(host=redis_host, port=redis_port, password=redis_password)
-#     return redis_client
-
-# def push_chunks_to_redis(chunks: list[str], command_key: str):
-#     redis_client = get_redis_client()
-#     for chunk in chunks:
-#         redis_client.lpush(command_key, chunk)
+def flatten_chunk_embeddings(chunks: list[SemanticChunk]):
+    
+    
