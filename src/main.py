@@ -1,7 +1,9 @@
 import os
 # import json # Removed as JSON file output is no longer needed
 from windbg_interface import WindbgInterface, load_config
-from chunking import chunk_text
+# from chunking import chunk_text, flatten_chunk_embeddings_to_document # Removed as chunking.py is deleted
+from langchain_interface import chunk_text, fetch_command_text
+from langchain_interface import create_vector_store, create_documents_from_command_chunks
 
 # --- Configuration Flags ---
 ENABLE_CHUNKING = True  # Set to False to disable chunking functionality
@@ -12,8 +14,7 @@ def main():
     cdb_path, minidump_path, chonkie_api_key = load_config()
     if not cdb_path or not minidump_path:
         print("❌ Error: CDB_PATH or MINIDUMP_PATH not set in .env file. ❌")
-        return
-    
+        return    
     if ENABLE_CHUNKING and not chonkie_api_key:
         print("❌ Error: CHONKIE_API_KEY not set in .env file, but chunking is enabled. ❌")
         return
@@ -26,18 +27,18 @@ def main():
     base_output_dir = os.path.join("command_outputs", minidump_date)
     os.makedirs(base_output_dir, exist_ok=True)
     print(f"✅ Created output directory: {base_output_dir}")
-    
+ 
     commands_to_run = [
         "kv",
-        "!thread",
-        "!devstack"
     ]
+    
+    vector_store = create_vector_store()
+    command_chunk_uuids = []
 
     print("\n--- ⏳ Starting Multi-Command Execution ⏳ ---")
     for command in commands_to_run:
         print(f"\n▶️ Executing command: '{command}'")
-        sanitized_command_name = ''.join(c if c.isalnum() else '_' for c in command)
-        
+        sanitized_command_name = ''.join(c if c.isalnum() else '_' for c in command)    
         # --- Save Raw Parsed Output ---
         output_file_name = f"{sanitized_command_name}.txt"
         output_file_path = os.path.join(base_output_dir, output_file_name)
@@ -45,17 +46,21 @@ def main():
         parsed_output = debugger.execute_command_and_parse_output(command, timeout=90)
 
         with open(output_file_path, "w", encoding="utf-8") as f:
-            f.write(parsed_output)
-            
-        # print(f"💾 Parsed output for '{command}' written to {output_file_path}")
-        # --------------------------------
+            f.write(parsed_output)    
 
         # --- Chunking Functionality ---
         if ENABLE_CHUNKING:
             print(f"✨ Chunking output for '{command}' using Chonkie Cloud...")
             try:
                 chunks_data = chunk_text(parsed_output, chonkie_api_key)
+                command_documents, command_document_uuids = create_documents_from_command_chunks(chunks_data, command, True)
+                vector_store.add_documents(command_documents)
+                command_chunk_uuids.extend(command_document_uuids)
+                print(f"📦 Command chunk UUIDs for '{command}': {command_chunk_uuids}")
                 
+                output_text = fetch_command_text(vector_store, command, "command_output", command_chunk_uuids)
+                print(f"📦 Output text for '{command}': {output_text}")
+
                 #print amount of chunks for the command ->
                 print(f"📦 Chunks for '{command}': {len(chunks_data)}")
                 #then print chunks by text value -> not  the embeddings
@@ -65,7 +70,6 @@ def main():
             except Exception as e:
                 print(f"❌ Error chunking output for '{command}': {e}")
         # --------------------------------
-    
     print("\n--- 🎉 All Commands Executed and Outputs Saved 🎉 ---")
 
 if __name__ == "__main__":

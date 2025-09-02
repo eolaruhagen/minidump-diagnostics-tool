@@ -1,2 +1,6 @@
 python-dotenv
-chonkie-cloud
+chonkie[all]
+redis-py
+numpy
+redisVL
+langchain
