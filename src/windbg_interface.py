@@ -10,6 +10,68 @@ class WindbgInterface:
         self.cdb_path = cdb_path
         self.minidump_path = minidump_path
 
+    def _clean_analyze_v_output(self, output: str) -> str:
+        """
+        Clean up !analyze -v command output by removing decorative elements and noise.
+        
+        This removes:
+        - Decorative asterisk header boxes (Bugcheck Analysis section)
+        - "Debugging Details:" headers and separators
+        - Lines that are just asterisks and spaces
+        - Leading/trailing empty lines
+        
+        Args:
+            output: Raw !analyze -v output
+            
+        Returns:
+            Cleaned output with noise removed
+        """
+        if not output:
+            return output
+            
+        lines = output.split('\n')
+        cleaned_lines = []
+        
+        for line in lines:
+            # Skip decorative asterisk headers (bugcheck analysis box)
+            if line.strip().startswith('*') and line.strip().endswith('*'):
+                continue
+                
+            # Skip lines that are just asterisks, spaces, or tabs
+            if all(c in '*  \t' for c in line.strip()) and line.strip():
+                continue
+                
+            # Skip the "Debugging Details:" header and its separator
+            if line.strip() in ["Debugging Details:", "------------------", "---------"]:
+                continue
+                
+            # Skip lines that are purely decorative (multiple dashes)
+            if line.strip() and all(c in '-' for c in line.strip()):
+                continue
+                
+            # Keep the line if it's not noise
+            cleaned_lines.append(line)
+        
+        # Remove any leading/trailing empty lines
+        while cleaned_lines and not cleaned_lines[0].strip():
+            cleaned_lines.pop(0)
+        while cleaned_lines and not cleaned_lines[-1].strip():
+            cleaned_lines.pop()
+            
+        return '\n'.join(cleaned_lines)
+
+    def _is_analyze_v_command(self, command: str) -> bool:
+        """
+        Check if the command is a variant of !analyze -v.
+        
+        Args:
+            command: The command string to check
+            
+        Returns:
+            True if this is an !analyze -v command variant
+        """
+        return cmd_lower == '!analyzev'
+
     def execute_command_and_parse_output(self, command: str, timeout=60) -> str:
         cdb_cmd_string = f".echo {OUTPUT_START_DELIMITER}; {command}; .echo {OUTPUT_END_DELIMITER}; qq"
         
@@ -60,7 +122,18 @@ class WindbgInterface:
             extracted_output = "\n".join(filter(None, extracted_lines)).strip()
 
             if extracted_output:
-                print(f"✅ Parsed Command Output (Terminal Display):\n{extracted_output}\n-------------------------------------------------")
+                # Apply special cleaning for !analyze -v command
+                if self._is_analyze_v_command(command):
+                    print("🧹 Applying special cleaning for !analyze -v command...")
+                    original_line_count = len(extracted_output.splitlines())
+                    extracted_output = self._clean_analyze_v_output(extracted_output)
+                    cleaned_line_count = len(extracted_output.splitlines())
+                    lines_removed = original_line_count - cleaned_line_count
+                    print(f"✅ Cleaned !analyze -v Output ({lines_removed} noise lines removed):")
+                    print(f"{extracted_output}")
+                    print("-" * 50)
+                else:
+                    print(f"✅ Parsed Command Output (Terminal Display):\n{extracted_output}\n-------------------------------------------------")
                 return extracted_output
             else:
                 print(f"⚠️ Warning: No content extracted between delimiters.\nFull output:\n{full_output}")
@@ -78,7 +151,7 @@ class WindbgInterface:
             error_msg = f"🔍 Error: CDB.exe not found at {self.cdb_path}"
             print(error_msg)
             return error_msg
-        except Exception as e:
+        except (OSError, RuntimeError) as e:
             error_msg = f"💥 An unexpected error occurred: {e}"
             print(error_msg)
             return error_msg
