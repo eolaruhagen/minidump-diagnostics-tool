@@ -13,18 +13,11 @@ class WindbgInterface:
     def _clean_analyze_v_output(self, output: str) -> str:
         """
         Clean up !analyze -v command output by removing decorative elements and noise.
-        
         This removes:
         - Decorative asterisk header boxes (Bugcheck Analysis section)
         - "Debugging Details:" headers and separators
         - Lines that are just asterisks and spaces
         - Leading/trailing empty lines
-        
-        Args:
-            output: Raw !analyze -v output
-            
-        Returns:
-            Cleaned output with noise removed
         """
         if not output:
             return output
@@ -63,14 +56,9 @@ class WindbgInterface:
     def _is_analyze_v_command(self, command: str) -> bool:
         """
         Check if the command is a variant of !analyze -v.
-        
-        Args:
-            command: The command string to check
-            
-        Returns:
-            True if this is an !analyze -v command variant
         """
-        return cmd_lower == '!analyzev'
+        cmd_lower = command.strip().lower().replace(' ', '').replace('-', '')
+        return cmd_lower in ['!analyzev', '!analyze-v', '!analyze -v'.replace(' ', '').replace('-', '')]
 
     def execute_command_and_parse_output(self, command: str, timeout=60) -> str:
         cdb_cmd_string = f".echo {OUTPUT_START_DELIMITER}; {command}; .echo {OUTPUT_END_DELIMITER}; qq"
