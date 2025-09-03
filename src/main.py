@@ -1,9 +1,8 @@
 import os
 # import json # Removed as JSON file output is no longer needed
 from windbg_interface import WindbgInterface, load_config
-# from chunking import chunk_text, flatten_chunk_embeddings_to_document # Removed as chunking.py is deleted
-from langchain_interface import chunk_text, fetch_command_text
-from langchain_interface import create_vector_store, create_documents_from_command_chunks
+
+from langchain_interface import VectorStoreManager
 
 # --- Configuration Flags ---
 ENABLE_CHUNKING = True  # Set to False to disable chunking functionality
@@ -29,10 +28,14 @@ def main():
     print(f"✅ Created output directory: {base_output_dir}")
  
     commands_to_run = [
-        "kv",
+        "!analyze -v",
+        "kvL",
+        "!devstack",
+        "!poolused",
     ]
     
-    vector_store = create_vector_store()
+    # Initialize VectorStoreManager with Chonkie API key for chunking
+    vector_manager = VectorStoreManager(chonkie_api_key=chonkie_api_key if ENABLE_CHUNKING else None)
     command_chunk_uuids = []
 
     print("\n--- ⏳ Starting Multi-Command Execution ⏳ ---")
@@ -52,13 +55,13 @@ def main():
         if ENABLE_CHUNKING:
             print(f"✨ Chunking output for '{command}' using Chonkie Cloud...")
             try:
-                chunks_data = chunk_text(parsed_output, chonkie_api_key)
-                command_documents, command_document_uuids = create_documents_from_command_chunks(chunks_data, command, True)
-                vector_store.add_documents(command_documents)
+                chunks_data = vector_manager.chunk_text(parsed_output)
+                command_documents, command_document_uuids = vector_manager.create_documents_from_command_chunks(chunks_data, command, True)
+                vector_manager.add_documents(command_documents)
                 command_chunk_uuids.extend(command_document_uuids)
-                print(f"📦 Command chunk UUIDs for '{command}': {command_chunk_uuids}")
+                print(f"📦 Command chunk UUIDs for '{command}': {command_document_uuids}")
                 
-                output_text = fetch_command_text(vector_store, command, "command_output", command_chunk_uuids)
+                output_text = vector_manager.fetch_command_text(command, "command_output", command_document_uuids)
                 print(f"📦 Output text for '{command}': {output_text}")
 
                 #print amount of chunks for the command ->
@@ -67,9 +70,26 @@ def main():
                 for chunk in chunks_data:
                     print(f"📦 Chunk for '{command}': {chunk.text}")
                 
-            except Exception as e:
+            except (ValueError, RuntimeError, AttributeError) as e:
                 print(f"❌ Error chunking output for '{command}': {e}")
         # --------------------------------
+    
+    # Demonstrate the RAG retrieval functionality
+    if ENABLE_CHUNKING and command_chunk_uuids:
+        print("\n--- 🔍 Testing RAG Retrieval 🔍 ---")
+        test_queries = [
+            "memory access violation",
+            "kernel version information", 
+            "driver analysis",
+            "system information"
+        ]
+        
+        for query in test_queries:
+            print(f"\n🔍 Query: '{query}'")
+            context = vector_manager.retrieve_context(query)
+            print(f"Retrieved context:\n{context}")
+            print("-" * 50)
+    
     print("\n--- 🎉 All Commands Executed and Outputs Saved 🎉 ---")
 
 if __name__ == "__main__":
