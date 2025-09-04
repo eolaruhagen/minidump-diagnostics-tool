@@ -60,7 +60,7 @@ class WindbgInterface:
         cmd_lower = command.strip().lower().replace(' ', '').replace('-', '')
         return cmd_lower in ['!analyzev', '!analyze-v', '!analyze -v'.replace(' ', '').replace('-', '')]
 
-    def execute_command_and_parse_output(self, command: str, timeout=60) -> str:
+    def execute_command_and_parse_output(self, command: str, timeout=300) -> str:
         cdb_cmd_string = f".echo {OUTPUT_START_DELIMITER}; {command}; .echo {OUTPUT_END_DELIMITER}; qq"
         
         cmd = [
