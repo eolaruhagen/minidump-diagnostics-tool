@@ -1,4 +1,5 @@
 .env
 .vscode
-/cursor_docs
-/src/__pycache__
+cursor_docs
+src/__pycache__
+command_outputs/*

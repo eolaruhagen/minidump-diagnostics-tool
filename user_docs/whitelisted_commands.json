@@ -1,122 +1,56 @@
 [
     {
-      "name": "analyze_verbose",
-      "command": "!analyze -v",
-      "purpose": "Performs an automated crash dump analysis, identifies probable cause, and provides verbose output.",
-      "arguments": [],
-      "when_to_use": "Always the first command to run. Provides the most critical initial diagnostic information."
+      "name": "list_modules_terse",
+      "command": "lm t n",
+      "purpose": "Lists all loaded modules in terse format with module names and base addresses.",
+      "has_arguments": false
     },
     {
-      "name": "list_modules_verbose",
-      "command": "lm kv",
-      "purpose": "Lists all loaded kernel and user-mode modules (drivers, DLLs) with verbose details (path, timestamp, version).",
-      "arguments": [],
-      "when_to_use": "To identify outdated or suspicious drivers, confirm module loading, or troubleshoot symbol issues after '!analyze -v'."
+      "name": "verifier_status",
+      "command": "!verifier",
+      "purpose": "Displays Driver Verifier status and settings, showing which drivers are being verified.",
+      "has_arguments": false
     },
     {
-      "name": "show_device_stack",
-      "command": "!devstack",
-      "purpose": "Displays the device stack associated with the faulting device object (if any).",
-      "arguments": [],
-      "when_to_use": "If '!analyze -v' suggests an I/O related crash or a specific device driver as the culprit. If it returns 'device obj not found', the crash is not directly I/O related."
+      "name": "driver_object_info",
+      "command": "!drvobj <driver> 2",
+      "purpose": "Shows detailed information about a specific driver object including dispatch routines and device objects.",
+      "has_arguments": true
     },
     {
-      "name": "show_thread_info",
-      "command": "!thread <thread_address>",
-      "purpose": "Provides detailed information about a specific thread, including its state, process, and associated kernel structures.",
-      "arguments": [
-        {"name": "thread_address", "type": "string", "description": "The ETHREAD address of the thread to inspect, typically found in '!analyze -v' or 'kL'."}
-      ],
-      "when_to_use": "When '!analyze -v' identifies a specific faulting thread, or to investigate threads in the call stack. Replace <thread_address> with the actual address."
-    },
-    {
-      "name": "show_kernel_stack_long",
-      "command": "kL",
-      "purpose": "Displays the kernel-mode call stack with full module and function names. Default for current thread.",
-      "arguments": [],
-      "when_to_use": "To trace the execution path leading to the crash, identify involved functions and drivers. Always run after '!analyze -v' to get the crash stack."
+      "name": "show_all_stacks",
+      "command": "!stacks",
+      "purpose": "Displays call stacks for all threads in the system, useful for identifying hung or problematic threads.",
+      "has_arguments": false
     },
     {
       "name": "show_stack_verbose",
       "command": "kv",
-      "purpose": "Displays the call stack (kernel and user mode if available) with verbose details including parameters.",
-      "arguments": [],
-      "when_to_use": "Similar to 'kL' but often provides more detail, particularly for parameters passed between functions. Useful for deeper stack analysis."
+      "purpose": "Displays the call stack with verbose details including parameters and local variables.",
+      "has_arguments": false
     },
     {
-      "name": "show_irp",
-      "command": "!irp <irp_address>",
-      "purpose": "Inspects an I/O Request Packet (IRP), showing its major/minor function, current stack location, and associated device/driver.",
-      "arguments": [
-        {"name": "irp_address", "type": "string", "description": "The address of the IRP to inspect, usually found in '!analyze -v' or thread context."}
-      ],
-      "when_to_use": "If '!analyze -v' or '!devstack' points to an I/O related issue or an active IRP. Replace <irp_address> with the actual address."
+      "name": "show_irql",
+      "command": "!irql",
+      "purpose": "Shows the current Interrupt Request Level (IRQL) for each processor in the system.",
+      "has_arguments": false
     },
     {
-      "name": "show_pool_used",
+      "name": "list_module_verbose",
+      "command": "lmvm <module>",
+      "purpose": "Lists verbose information about a specific module including version, timestamp, and file details.",
+      "has_arguments": true
+    },
+    {
+      "name": "show_pool_usage",
       "command": "!poolused",
-      "purpose": "Summarizes kernel pool memory usage by tag, identifying potential memory leaks or excessive consumption by drivers.",
-      "arguments": [],
-      "when_to_use": "If '!analyze -v' indicates memory management issues, pool corruption (e.g., BAD_POOL_CALLER), or resource exhaustion."
+      "purpose": "Summarizes kernel pool memory usage by tag, identifying potential memory leaks or excessive consumption.",
+      "has_arguments": false
     },
     {
-      "name": "show_registers",
-      "command": "r",
-      "purpose": "Displays the current state of processor registers (e.g., RAX, RIP, RSP) at the time of the crash.",
-      "arguments": [],
-      "when_to_use": "To understand the immediate CPU state at the faulting instruction, especially in conjunction with stack traces and assembly analysis."
-    },
-    {
-      "name": "examine_symbols",
-      "command": "x <module>!<symbol_pattern>",
-      "purpose": "Examines symbols (functions, global variables) within a specific module that match a pattern.",
-      "arguments": [
-        {"name": "module", "type": "string", "description": "The name of the module (e.g., 'nt', 'MyDriver')."},
-        {"name": "symbol_pattern", "type": "string", "description": "A wildcard pattern for symbols (e.g., '*malloc*', '*MyFunc*'). Use sparingly and specifically."}
-      ],
-      "when_to_use": "When trying to find specific functions or global variables within a suspected driver or kernel component. Avoid 'x nt!*' for general analysis due to volume. Use targeted patterns."
-    },
-    {
-      "name": "examine_pool_specific",
-      "command": "!pool <address> <count>",
-      "purpose": "Examines specific kernel pool allocations at a given address, useful for detailed memory corruption analysis.",
-      "arguments": [
-        {"name": "address", "type": "string", "description": "The starting address of the pool allocation to inspect."},
-        {"name": "count", "type": "integer", "description": "The number of ULONG_PTRs (8-byte chunks) to display."}
-      ],
-      "when_to_use": "If '!analyze -v' or '!poolused' points to specific pool corruption at a known address."
-    },
-    {
-      "name": "find_pool_pattern",
-      "command": "!poolfind <tag> <address>",
-      "purpose": "Searches for kernel pool allocations with a specific tag, optionally starting from an address.",
-      "arguments": [
-        {"name": "tag", "type": "string", "description": "The 4-character pool tag (e.g., 'Proc')."},
-        {"name": "address", "type": "string", "description": "Optional starting address for the search."}
-      ],
-      "when_to_use": "To locate all allocations of a specific tag, useful for tracking down leaks or finding corrupted blocks with a known tag."
-    },
-    {
-      "name": "show_handle_info",
-      "command": "!handle 0 f <process_address>",
-      "purpose": "Lists all kernel handles (files, events, mutexes, etc.) for a specified process.",
-      "arguments": [
-        {"name": "process_address", "type": "string", "description": "The EPROCESS address of the process to inspect (from '!analyze -v' or '!thread')."}
-      ],
-      "when_to_use": "If '!analyze -v' suggests resource exhaustion related to handles or if a process appears to be leaking kernel objects."
-    },
-    {
-      "name": "show_error_record",
-      "command": "!errrec",
-      "purpose": "Displays the Processor Error Record (WHEA_ERROR_RECORD) if available, crucial for hardware-related crashes.",
-      "arguments": [],
-      "when_to_use": "Specifically for WHEA_UNCORRECTABLE_ERROR (0x124) bugchecks to diagnose CPU, memory, or I/O bus hardware failures."
-    },
-    {
-      "name": "show_symbol_status",
-      "command": "!sym",
-      "purpose": "Provides detailed status of the debugger's symbol engine, including search paths and loaded symbols.",
-      "arguments": [],
-      "when_to_use": "If symbol resolution issues are suspected (e.g., unresolved stack frames), or to confirm symbol path configuration. Can be used with '!sym noisy' for verbose output."
+      "name": "analyze_memory_address",
+      "command": "!address <P1>",
+      "purpose": "Analyzes a specific memory address, showing its type, protection, and associated memory region information.",
+      "has_arguments": true
     }
   ]
