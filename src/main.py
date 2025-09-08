@@ -320,6 +320,11 @@ class DebuggingPipeline:
         final_json = self.prompt_manager.extract_json_from_final_response(final_response)
         analysis_text = self.prompt_manager.extract_analysis_text_from_response(final_response)
         
+        # Always save the raw response as a fallback for debugging/recovery
+        raw_output_file = self.output_dir / "final_analysis_raw.txt"
+        with open(raw_output_file, "w", encoding="utf-8") as f:
+            f.write(final_response)
+        
         # Save JSON citations
         output_file = self.output_dir / "final_analysis.json"
         with open(output_file, "w", encoding="utf-8") as f:
@@ -330,13 +335,24 @@ class DebuggingPipeline:
         with open(analysis_file, "w", encoding="utf-8") as f:
             f.write(analysis_text)
         
-        logger.info(f"Final citations saved to: {output_file}")
-        logger.info(f"Final analysis saved to: {analysis_file}")
+        # Check if parsing was successful and log appropriate messages
+        if final_json.get("citations"):
+            logger.info(f"Final citations saved to: {output_file}")
+        else:
+            logger.warning(f"No citations extracted - check raw output in: {raw_output_file}")
+            
+        if analysis_text and analysis_text != "Unable to extract analysis text from LLM response":
+            logger.info(f"Final analysis saved to: {analysis_file}")
+        else:
+            logger.warning(f"Analysis text extraction failed - check raw output in: {raw_output_file}")
+        
+        logger.info(f"Raw LLM response saved to: {raw_output_file}")
         
         # Return both for compatibility
         return {
             "citations": final_json.get("citations", []),
             "analysis_file": str(analysis_file),
+            "raw_output_file": str(raw_output_file),
             "analysis_preview": analysis_text[:200] + "..." if len(analysis_text) > 200 else analysis_text
         }
     
