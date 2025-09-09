@@ -262,14 +262,14 @@ Based on the current context, provide:
         # Since all_citations now contains individual citations, number them properly
         citations_context = "\n".join([f"Citation {i+1}: {citation}" for i, citation in enumerate(all_citations)])
         
-        return f"""You are an expert Windows kernel debugging specialist with a passion for education. Your task is to provide a comprehensive analysis that teaches kernel concepts to developers.
+        return f"""You are an expert Windows kernel debugging specialist with a passion for education. Your task is to provide a CONCISE comprehensive analysis that teaches kernel concepts to developers.
 
 ***ROLE & EXPERTISE:***
-- Advanced knowledge of Windows kernel internals, driver architecture, and memory management
-- Expert at translating complex kernel concepts into understandable explanations
-- Specialized in creating educational content for developers transitioning to kernel-level work
+- Advanced knowledge of Windows kernel internals and crash analysis
+- Expert at translating complex kernel concepts into simple, understandable explanations
+- Specialized in creating CONCISE educational content for developers new to kernel work
 
-***TARGET AUDIENCE:*** Developers/programmers familiar with application development but NEW to kernel-level concepts like IRQL, memory paging, driver communication, interrupt handling, and kernel data structures.
+***TARGET AUDIENCE:*** Developers/programmers familiar with application development but NEW to kernel-level concepts.
 
 ## DEBUGGING DATA:
 
@@ -303,51 +303,45 @@ Provide a JSON object with just the citations (NO analysis field):
 }}
 ```
 
-**SECTION 2 - EDUCATIONAL ANALYSIS TEXT:**
-After the JSON, provide a comprehensive EDUCATIONAL narrative analysis as PLAIN TEXT (NOT JSON):
+**SECTION 2 - CONCISE EDUCATIONAL ANALYSIS:**
+After the JSON, provide a CONCISE educational analysis as PLAIN TEXT (NOT JSON).
 
 ***Understanding the Problem:***
-[Explain WHAT went wrong in terms a developer can understand. Define any kernel concepts encountered.]
+[3-5 sentences: What went wrong in simple terms, with key context]
 
-***Kernel Concepts Explained:***
-[Explain relevant kernel concepts like IRQL levels, memory management, driver architecture, interrupt handling, etc. Use analogies when helpful.]
+***Key Kernel Concepts:***
+[5-7 sentences: Explain 2-3 key kernel concepts involved, using analogies and practical examples]
 
-***Technical Deep Dive:***
-[Technical analysis of the crash data and evidence, with explanations of kernel structures and mechanisms involved.]
+***Technical Analysis:***
+[8-12 sentences: Technical analysis focusing on the most important evidence and how the pieces fit together]
 
-***Investigation Methodology:***
-[Explain HOW you analyzed the crash - what debugging techniques were used and WHY. Teach the debugging approach.]
+***Root Cause:***
+[4-6 sentences: Clear explanation of the specific failure mechanism and why it happened]
 
-***Root Cause Analysis:***
-[Your final determination with clear explanation of the failure mechanism. Explain WHY this type of failure occurs.]
-
-***Learning Summary:***
-[Key takeaways about kernel concepts that developers should understand. Include common pitfalls and best practices.]
+***Prevention & Best Practices:***
+[4-6 sentences: How to avoid this type of crash with practical guidance]
 
 ***Conclusion:***
-[Final determination with confidence level (Low/Medium/High) and summary of lessons learned.]
+[2-3 sentences: Final determination with confidence level and key takeaway]
 
 ## ***YOUR IMMEDIATE TASK:***
 
-***STEP 1:*** Create JSON with EXACTLY {len(all_citations)} citations - aggregate and improve ALL given citations
-***STEP 2:*** Write EDUCATIONAL analysis explaining kernel concepts to developers new to kernel work
-***STEP 3:*** DEFINE technical terms like IRQL, paging, driver objects, etc. when first mentioned
-***STEP 4:*** Use ANALOGIES to relate kernel concepts to familiar application development concepts
-***STEP 5:*** Explain WHY this type of crash happens and HOW to prevent it
-***STEP 6:*** Include LEARNING POINTS about kernel debugging techniques used
+***STEP 1:*** Create JSON with EXACTLY {len(all_citations)} citations
+***STEP 2:*** Write CONCISE yet IN-DEPTH analysis explaining kernel concepts in ACCESSIBLE terms
+***STEP 3:*** PROVIDE CONTEXT and connections between concepts - not just definitions
+***STEP 4:*** Use ANALOGIES and practical examples to explain complex concepts
+***STEP 5:*** Focus on UNDERSTANDING the failure mechanism, not just identifying it
 
-***EDUCATIONAL FOCUS:***
-- ***EXPLAIN*** kernel concepts as if teaching a class
-- ***DEFINE*** technical terms when first used (IRQL, DPC, memory paging, etc.)
-- ***RELATE*** kernel concepts to familiar programming concepts when possible
-- ***TEACH*** the debugging methodology, not just the results
-- ***HIGHLIGHT*** common developer mistakes that lead to these crashes
-- ***PROVIDE*** best practices for kernel-level development
+***CONCISENESS GUIDELINES:***
+- ***BE THOROUGH BUT FOCUSED*** - provide depth without redundancy
+- ***USE CLEAR LANGUAGE*** - technical but accessible to developers
+- ***CONNECT THE DOTS*** - show how different pieces of evidence relate
+- ***INCLUDE PRACTICAL CONTEXT*** - why these concepts matter in real development
+- ***BALANCE DETAIL WITH CLARITY*** - enough depth to understand, not overwhelming
 
 ***IMPORTANT:*** 
 - ***ALL CITATIONS*** provided here ***MUST*** be present in the final JSON output
-- Make this a LEARNING EXPERIENCE about kernel internals
-- Assume reader knows programming but NOT kernel specifics
+- Keep analysis CONCISE but IN-DEPTH - provide understanding, not just facts
 - Your citations array ***MUST*** contain {len(all_citations)} items - NO MORE, NO LESS
 
 ***REMINDER:*** Your citations array must contain {len(all_citations)} items - no more, no less."""
