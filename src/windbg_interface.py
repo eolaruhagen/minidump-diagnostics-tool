@@ -1,6 +1,7 @@
 import os
 import subprocess
 from dotenv import load_dotenv
+from app_logger import logger
 
 OUTPUT_START_DELIMITER = "---COMMAND_START---"
 OUTPUT_END_DELIMITER = "---COMMAND_END---"
@@ -13,18 +14,11 @@ class WindbgInterface:
     def _clean_analyze_v_output(self, output: str) -> str:
         """
         Clean up !analyze -v command output by removing decorative elements and noise.
-        
         This removes:
         - Decorative asterisk header boxes (Bugcheck Analysis section)
         - "Debugging Details:" headers and separators
         - Lines that are just asterisks and spaces
         - Leading/trailing empty lines
-        
-        Args:
-            output: Raw !analyze -v output
-            
-        Returns:
-            Cleaned output with noise removed
         """
         if not output:
             return output
@@ -63,17 +57,17 @@ class WindbgInterface:
     def _is_analyze_v_command(self, command: str) -> bool:
         """
         Check if the command is a variant of !analyze -v.
-        
-        Args:
-            command: The command string to check
-            
-        Returns:
-            True if this is an !analyze -v command variant
         """
-        return cmd_lower == '!analyzev'
+        cmd_lower = command.strip().lower().replace(' ', '').replace('-', '')
+        return cmd_lower in ['!analyzev', '!analyze-v', '!analyze -v'.replace(' ', '').replace('-', '')]
 
-    def execute_command_and_parse_output(self, command: str, timeout=60) -> str:
-        cdb_cmd_string = f".echo {OUTPUT_START_DELIMITER}; {command}; .echo {OUTPUT_END_DELIMITER}; qq"
+    def execute_command_and_parse_output(self, command: str, timeout=300) -> str:
+        # For !analyze -v, don't prepend stack command and extract it from output
+        if self._is_analyze_v_command(command):
+            cdb_cmd_string = f".echo {OUTPUT_START_DELIMITER}; {command}; .echo {OUTPUT_END_DELIMITER}; qq"
+        else:
+            # For all other commands, prepend the stack command for proper context
+            cdb_cmd_string = f".echo {OUTPUT_START_DELIMITER}; {command}; .echo {OUTPUT_END_DELIMITER}; qq"
         
         cmd = [
             self.cdb_path,
@@ -81,11 +75,11 @@ class WindbgInterface:
             '-c', cdb_cmd_string
         ]
 
-        print(f"▶️ Executing CDB command: {' '.join(cmd)}")
+        logger.info(f"Executing CDB command: {' '.join(cmd)}")
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=timeout)
             full_output = result.stdout
-            # print(f"📄 Full output from CDB:\n{full_output}")
+            # logger.debug(f"Full output from CDB:\n{full_output}")
             
             lines = full_output.splitlines()
             
@@ -124,41 +118,41 @@ class WindbgInterface:
             if extracted_output:
                 # Apply special cleaning for !analyze -v command
                 if self._is_analyze_v_command(command):
-                    print("🧹 Applying special cleaning for !analyze -v command...")
+                    logger.info("Applying special cleaning for !analyze -v command...")
                     original_line_count = len(extracted_output.splitlines())
                     extracted_output = self._clean_analyze_v_output(extracted_output)
                     cleaned_line_count = len(extracted_output.splitlines())
                     lines_removed = original_line_count - cleaned_line_count
-                    print(f"✅ Cleaned !analyze -v Output ({lines_removed} noise lines removed):")
-                    print(f"{extracted_output}")
-                    print("-" * 50)
+                    logger.info(f"Cleaned !analyze -v Output ({lines_removed} noise lines removed):")
+                    
+                    logger.info(f"{extracted_output}")
+                    logger.info("-" * 50)
                 else:
-                    print(f"✅ Parsed Command Output (Terminal Display):\n{extracted_output}\n-------------------------------------------------")
+                    logger.info(f"Parsed Command Output (Terminal Display):\n{extracted_output}\n-------------------------------------------------")
                 return extracted_output
             else:
-                print(f"⚠️ Warning: No content extracted between delimiters.\nFull output:\n{full_output}")
+                logger.warning(f"Warning: No content extracted between delimiters.\nFull output:\n{full_output}")
                 return full_output
 
         except subprocess.CalledProcessError as e:
-            error_msg = f"❌ Error executing CDB command: {e}\nStdout: {e.stdout}\nStderr: {e.stderr}"
-            print(error_msg)
+            error_msg = f"Error executing CDB command: {e}\nStdout: {e.stdout}\nStderr: {e.stderr}"
+            logger.error(error_msg)
             return error_msg
         except subprocess.TimeoutExpired as e:
-            error_msg = f"⏰ CDB command timed out after {timeout} seconds.\nStdout: {e.stdout}\nStderr: {e.stderr}"
-            print(error_msg)
+            error_msg = f"CDB command timed out after {timeout} seconds.\nStdout: {e.stdout}\nStderr: {e.stderr}"
+            logger.error(error_msg)
             return error_msg
         except FileNotFoundError:
-            error_msg = f"🔍 Error: CDB.exe not found at {self.cdb_path}"
-            print(error_msg)
+            error_msg = f"Error: CDB.exe not found at {self.cdb_path}"
+            logger.error(error_msg)
             return error_msg
         except (OSError, RuntimeError) as e:
-            error_msg = f"💥 An unexpected error occurred: {e}"
-            print(error_msg)
+            error_msg = f"An unexpected error occurred: {e}"
+            logger.error(error_msg)
             return error_msg
 
 def load_config():
     load_dotenv()
     cdb_path = os.getenv('CDB_PATH')
     minidump_path = os.getenv('MINIDUMP_PATH')
-    chonkie_api_key = os.getenv('CHONKIE_API_KEY')
-    return cdb_path, minidump_path, chonkie_api_key
+    return cdb_path, minidump_path

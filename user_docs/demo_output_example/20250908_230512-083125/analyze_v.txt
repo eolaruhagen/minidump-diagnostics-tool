@@ -7,9 +7,9 @@ Arg3: 0000000000000000, 0
 Arg4: ffffa704eeb6bec0, 0
 KEY_VALUES_STRING: 1
 Key  : Analysis.CPU.mSec
-Value: 1265
+Value: 1718
 Key  : Analysis.Elapsed.mSec
-Value: 1296
+Value: 1736
 Key  : Analysis.IO.Other.Mb
 Value: 0
 Key  : Analysis.IO.Read.Mb
@@ -17,11 +17,11 @@ Value: 0
 Key  : Analysis.IO.Write.Mb
 Value: 0
 Key  : Analysis.Init.CPU.mSec
-Value: 452
+Value: 421
 Key  : Analysis.Init.Elapsed.mSec
-Value: 3554
+Value: 4281
 Key  : Analysis.Memory.CommitPeak.Mb
-Value: 79
+Value: 78
 Key  : Bugcheck.Code.LegacyAPI
 Value: 0x4a
 Key  : Dump.Attributes.AsUlong

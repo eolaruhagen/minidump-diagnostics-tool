@@ -1,0 +1,100 @@
+{
+  "citations": [
+    {
+      "value_name": "BUGCHECK_CODE",
+      "description": "This bugcheck code, IRQL_GT_ZERO_AT_SYSTEM_SERVICE, indicates that the system attempted to return to user mode from a system call at an Interrupt Request Level (IRQL) greater than PASSIVE_LEVEL (IRQL 0). This is a critical kernel error."
+    },
+    {
+      "value_name": "BUGCHECK_P1",
+      "description": "This argument represents the address of the system function (system call routine) that was being exited when the IRQL violation occurred."
+    },
+    {
+      "value_name": "BUGCHECK_P2",
+      "description": "This argument specifies the current IRQL at the time of the bugcheck, which is DISPATCH_LEVEL (IRQL 2). Returning to user mode at this IRQL is illegal."
+    },
+    {
+      "value_name": "PROCESS_NAME",
+      "description": "This indicates that the process `notmyfault64.e` was the user-mode process active when the system call exit failed due to the elevated IRQL. This tool is often used to intentionally trigger system crashes."
+    },
+    {
+      "value_name": "SYMBOL_NAME",
+      "description": "This symbol points to the exact location within the Windows kernel (ntkrnlmp.exe) where the system detected the IRQL violation during the exit path of a system service."
+    },
+    {
+      "value_name": "MODULE_NAME",
+      "description": "The crash occurred within the `nt` module, which is the core Windows kernel, specifically during the system service exit routine."
+    },
+    {
+      "value_name": "IMAGE_NAME",
+      "description": "This is the kernel image file where the crash was detected."
+    },
+    {
+      "value_name": "VIRTUAL_MACHINE",
+      "description": "The system was running within a VirtualBox virtual machine environment."
+    },
+    {
+      "value_name": "BUGCHECK_CODE",
+      "description": "Indicates an IRQL violation where a system service returned to user mode at an IRQL greater than PASSIVE_LEVEL."
+    },
+    {
+      "value_name": "BUGCHECK_P2",
+      "description": "Confirms the Interrupt Request Level (IRQL) was DISPATCH_LEVEL (IRQL 2) at the time the system service attempted to return to user mode."
+    },
+    {
+      "value_name": "PROCESS_NAME",
+      "description": "Identifies the user-mode process that initiated the system call, strongly suggesting this application or its associated driver is the root cause."
+    },
+    {
+      "value_name": "SYMBOL_NAME",
+      "description": "Shows the kernel detected the IRQL violation during the exit path of a system service, indicating a prior kernel-mode component failed to lower the IRQL."
+    },
+    {
+      "value_name": "FAILURE_BUCKET_ID",
+      "description": "Further links the crash to the `notmyfault64.e` process and an IRQL fault detected by the kernel."
+    },
+    {
+      "value_name": "BUGCHECK_CODE",
+      "description": "Indicates the system attempted to return to user mode from a system call at an IRQL greater than PASSIVE_LEVEL."
+    },
+    {
+      "value_name": "BUGCHECK_P2",
+      "description": "Confirms the current IRQL was DISPATCH_LEVEL (IRQL 2) at the time of the bugcheck, which is higher than the required PASSIVE_LEVEL (IRQL 0) for returning to user mode."
+    },
+    {
+      "value_name": "PROCESS_NAME",
+      "description": "Identifies the user-mode process that initiated the system call, strongly suggesting it or an associated driver is involved in the crash."
+    },
+    {
+      "value_name": "SYMBOL_NAME",
+      "description": "Pinpoints the exact kernel function where the IRQL check failed during the system service exit, indicating a kernel component failed to lower the IRQL."
+    },
+    {
+      "value_name": "FAILURE_BUCKET_ID",
+      "description": "Directly links the IRQL fault to the `notmyfault64.e` process and the kernel's system service exit routine, providing a strong hint about the culprit."
+    },
+    {
+      "value_name": "BUGCHECK_CODE",
+      "description": "Indicates an IRQL_GT_ZERO_AT_SYSTEM_SERVICE bugcheck, meaning the system attempted to return to user mode from a system call at an IRQL greater than PASSIVE_LEVEL."
+    },
+    {
+      "value_name": "BUGCHECK_P2",
+      "description": "Confirms the current IRQL was DISPATCH_LEVEL (IRQL 2) at the time of the bugcheck, which is an illegal state for returning from a system call."
+    },
+    {
+      "value_name": "PROCESS_NAME",
+      "description": "Identifies the user-mode process that initiated the system call, strongly implicating its associated driver."
+    },
+    {
+      "value_name": "FAILURE_BUCKET_ID",
+      "description": "Explicitly links the IRQL fault to the `notmyfault64.e` process and the kernel's system service exit routine."
+    },
+    {
+      "value_name": "STACK_TEXT",
+      "description": "Shows the exact kernel function where the IRQL check failed, confirming the system was exiting a system call."
+    },
+    {
+      "value_name": "MODULE_NAME",
+      "description": "Found in `lm t n` output, this driver is highly likely to be the kernel component associated with the `notmyfault64.e` process, and thus the source of the IRQL violation."
+    }
+  ]
+}
