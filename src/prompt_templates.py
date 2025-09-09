@@ -13,14 +13,12 @@ class PromptTemplateManager:
         self.whitelisted_commands_path = Path(whitelisted_commands_path)
         self._whitelisted_commands = self._load_whitelisted_commands()
         
-        # Special commands
         self.stop_command = "STOP_DEBUGGING"
         
-        # Authorized bugcheck codes (from new_prompting.md) - support both formats
         self.authorized_bugcheck_codes = [
             '0xA', '0xD1', '0xC4', '0xC9', '0x50', '0x7E', '0x8E', '0x1E',  # with 0x
             'A', 'D1', 'C4', 'C9', '50', '7E', '8E', '1E',                  # without 0x uppercase
-            'a', 'd1', 'c4', 'c9', '50', '7e', '8e', '1e', '4a'            # lowercase (including 4a)
+            'a', 'd1', 'c4', 'c9', '50', '7e', '8e', '1e', '4a'            
         ]
     
     def _load_whitelisted_commands(self) -> List[Dict[str, Any]]:
@@ -65,17 +63,20 @@ class PromptTemplateManager:
     
     def get_overall_sysprompt(self) -> str:
         """Get the overall system prompt (everything but final)."""
-        return """You are an expert Windows kernel debugging specialist. Your role is to systematically analyze crash dumps using WinDbg commands and provide structured analysis with proper citations.
+        return """You are an expert Windows kernel debugging specialist with deep expertise in crash dump analysis and WinDbg debugging techniques.
 
-APPROACH: Be methodical and thorough. Investigate multiple aspects of the crash before drawing conclusions. Gather evidence from different sources to build a comprehensive understanding of the failure.
+***ROLE & EXPERTISE:***
+- Advanced knowledge of Windows kernel internals, driver architecture, and memory management
+- Expert-level proficiency with WinDbg commands and crash dump interpretation  
+- Systematic debugging methodology focused on evidence-based root cause analysis
 
-Specifically, you will want to identify the root cause of the crash under the assumption that the user already is aware of the bugcheck code, so focus on deeper analysis of specific citations that you will create.
-        The final goal is to identify the root cause of the crash with high confidence, and provide a detailed explanation of how you arrived at that conclusion, creating analysis and explanations of kernel level systems that less experienced users can learn from.
-        You will use the available commands to gather information, and you will cite specific lines of output.
+***APPROACH:*** Be METHODICAL and THOROUGH. Investigate multiple aspects of crashes before drawing conclusions. Gather evidence from different sources to build comprehensive understanding of failures.
 
-## CRITICAL FORMATTING REQUIREMENTS:
+***PRIMARY GOAL:*** Identify the ROOT CAUSE of crashes with HIGH CONFIDENCE and provide detailed explanations that help less experienced users learn about kernel-level systems.
 
-You MUST use these exact delimiters to separate sections of your response:
+## ***CRITICAL FORMATTING REQUIREMENTS:***
+
+You ***MUST*** use these EXACT delimiters to separate sections of your response:
 
 ### Citations Section:
 Start with: <CITATIONS>
@@ -105,19 +106,22 @@ Example:
 mydriver.sys
 </CMD_ARGUMENT>
 
-ALWAYS use these delimiters exactly as shown. Your response will be parsed automatically using these markers."""
+***IMPORTANT:*** ALWAYS use these delimiters EXACTLY as shown. Your response will be parsed automatically using these markers."""
     
     def get_main_loop_sysprompt(self) -> str:
         """Get the system prompt specifically for main loop (includes RAG query)."""
-        return """You are an expert Windows kernel debugging specialist. Your role is to systematically analyze crash dumps using WinDbg commands and provide structured analysis with proper citations.
-        
-Your approach should be THOROUGH and METHODICAL. Do not rush to conclusions - gather comprehensive evidence from multiple sources before determining root cause. The goal is to identify the exact faulty module and understand the precise technical mechanism that led to the crash.
-        
-Specifically, you will want to identify the root cause of the crash under the assumption that the user already is aware of the bugcheck code, so focus on deeper analysis of specific citations that you will create.
+        return """You are an expert Windows kernel debugging specialist with deep expertise in crash dump analysis and WinDbg debugging techniques.
 
-## CRITICAL FORMATTING REQUIREMENTS:
+***ROLE & EXPERTISE:***
+- Advanced knowledge of Windows kernel internals, driver architecture, and memory management
+- Expert-level proficiency with WinDbg commands and crash dump interpretation
+- Systematic debugging methodology focused on evidence-based root cause analysis
 
-You MUST use these exact delimiters to separate sections of your response:
+***APPROACH:*** Be THOROUGH and METHODICAL. Do NOT rush to conclusions - gather COMPREHENSIVE evidence from multiple sources before determining root cause. The goal is to identify the EXACT faulty module and understand the PRECISE technical mechanism that led to the crash.
+
+## ***CRITICAL FORMATTING REQUIREMENTS:***
+
+You ***MUST*** use these EXACT delimiters to separate sections of your response:
 
 ### Citations Section:
 Start with: <CITATIONS>
@@ -157,15 +161,16 @@ Example:
 driver IRQL violation memory access fault address stack frame ntoskrnl
 </RAG_QUERY>
 
-ALWAYS use these delimiters exactly as shown. Your response will be parsed automatically using these markers."""
+***IMPORTANT:*** ALWAYS use these delimiters EXACTLY as shown. Your response will be parsed automatically using these markers."""
     
     def get_initial_sysprompt(self) -> str:
         """Get the initial system prompt with authorized bugcheck codes. Note that The line BUGCHECK_CODE may output variations of a code for example (0x4a, 4a, 4A, etc.) ONLY PAY ATTENTION TO THE CODE ON THE LINE WITH BUGCHECK_CODE"""
-        # Show only the main codes in a clean format
         main_codes = "0x4A, 0xA, 0xD1, 0xC4, 0xC9, 0x50, 0x7E, 0x8E, 0x1E"
-        return f"""You are authorized to analyze only these bugcheck codes: {main_codes}
+        return f"""***AUTHORIZATION:*** You are ONLY authorized to analyze these SPECIFIC bugcheck codes: {main_codes}
 
-If the crash has a different bugcheck code, respond with exactly "STOP_DEBUGGING" as the command and note that this crash type is not compatible."""
+***IMPORTANT:*** The line BUGCHECK_CODE may output variations of a code (example: 0x4a, 4a, 4A, etc.) - ONLY pay attention to the code on the line with BUGCHECK_CODE.
+
+***IF*** the crash has a DIFFERENT bugcheck code, respond with EXACTLY "STOP_DEBUGGING" as the command and note that this crash type is NOT compatible."""
     
     def get_initial_prompt(self, analyze_v_output: str) -> str:
         """Create the initial prompt with full analyze -v output and commands."""
@@ -183,13 +188,14 @@ If the crash has a different bugcheck code, respond with exactly "STOP_DEBUGGING
 ## AVAILABLE COMMANDS:
 {commands_list}
 
-## YOUR TASK:
-1. First check if the bugcheck code is in the authorized list
-2. If not authorized, respond with STOP_DEBUGGING command only
-3. If authorized, provide citations from the crash dump in the required delimited format
-4. Then provide the next command alias and argument using the required delimited format
+## ***YOUR IMMEDIATE TASK:***
 
-Provide your response using the exact delimiter format specified above."""
+***STEP 1:*** First check if the BUGCHECK CODE is in the AUTHORIZED list
+***STEP 2:*** If NOT authorized, respond with STOP_DEBUGGING command ONLY
+***STEP 3:*** If AUTHORIZED, provide citations from the crash dump using the ***REQUIRED DELIMITED FORMAT***
+***STEP 4:*** Then provide the NEXT command alias and argument using the ***REQUIRED DELIMITED FORMAT***
+
+***CRITICAL:*** Provide your response using the EXACT delimiter format specified above. Use ALL CAPS and ***emphasis*** for important keywords and sections."""
     
     def get_main_loop_prompt(self, 
                            analyze_v_output: str,
@@ -201,16 +207,13 @@ Provide your response using the exact delimiter format specified above."""
         if used_commands is None:
             used_commands = []
         
-        # Create current context
         context_sections = [f"## INITIAL ANALYZE -V OUTPUT:\n```\n{analyze_v_output}\n```"]
         
-        # Add previous command outputs
         if command_outputs:
             context_sections.append("## PREVIOUS COMMAND OUTPUTS:")
             for command, output in command_outputs:
                 context_sections.append(f"### Command: {command}\n```\n{output}\n```")
         
-        # Add RAG context only if provided and not empty
         if rag_context and rag_context.strip():
             context_sections.append(f"## RETRIEVED DEBUGGING CONTEXT:\n{rag_context}")
         
@@ -227,55 +230,64 @@ Provide your response using the exact delimiter format specified above."""
 ## AVAILABLE COMMANDS:
 {available_commands}
 
-**DEBUGGING STRATEGY:** Use multiple complementary commands to build a complete picture. For example:
-- Use `driver_object_info` to examine suspect drivers in detail
-- Use `show_all_stacks` to understand thread states and call patterns  
-- Use `list_module_verbose` to check driver versions and timestamps
-- Use `show_verifier` to identify driver verification issues
-- Combine findings from multiple commands to support your conclusions
+## ***DEBUGGING STRATEGY:***
+Use MULTIPLE COMPLEMENTARY commands to build a COMPLETE picture. For example:
+- Use `driver_object_info` to examine SUSPECT drivers in detail
+- Use `show_all_stacks` to understand THREAD states and call patterns  
+- Use `list_module_verbose` to check DRIVER versions and timestamps
+- Use `show_verifier` to identify DRIVER verification issues
+- COMBINE findings from multiple commands to support your conclusions
 
-## YOUR TASK:
+## ***CRITICAL STOP_DEBUGGING CRITERIA:***
+***ONLY*** use STOP_DEBUGGING when you can provide ***ALL*** of the following:
+- ***DEFINITIVE*** identification of the SPECIFIC faulty driver/module that caused the crash
+- ***CLEAR*** explanation of WHY the crash occurred (the EXACT technical mechanism)
+- ***EVIDENCE*** from MULTIPLE debugging commands that supports your conclusion
+- ***CONFIDENCE LEVEL*** of HIGH
+
+***DO NOT*** stop debugging if you only have PARTIAL information or suspects. CONTINUE investigating with additional commands to gather MORE evidence. A thorough analysis requires examining MULTIPLE aspects: driver details, stack traces, memory state, and system context.
+
+## ***YOUR IMMEDIATE TASK:***
+
 Based on the current context, provide:
-1. Citations from the debugging data using <CITATIONS></CITATIONS> delimiters
-2. Next command alias to execute (or STOP_DEBUGGING only if you have 100% confident root cause analysis) using <COMMAND></COMMAND> delimiters
-3. Command argument (or NO_ARGUMENT if none needed) using <CMD_ARGUMENT></CMD_ARGUMENT> delimiters
-4. RAG query for retrieving relevant context using <RAG_QUERY></RAG_QUERY> delimiters
+***STEP 1:*** Citations from the debugging data using <CITATIONS></CITATIONS> delimiters
+***STEP 2:*** Next command alias to execute (or STOP_DEBUGGING ONLY if you have 100% confident root cause analysis) using <COMMAND></COMMAND> delimiters
+***STEP 3:*** Command argument (or NO_ARGUMENT if none needed) using <CMD_ARGUMENT></CMD_ARGUMENT> delimiters
+***STEP 4:*** RAG query for retrieving relevant context using <RAG_QUERY></RAG_QUERY> delimiters
 
-## CRITICAL STOP_DEBUGGING CRITERIA:
-Only use STOP_DEBUGGING when you can provide ALL of the following:
-- Definitive identification of the specific faulty driver/module that caused the crash
-- Clear explanation of WHY the crash occurred (the exact technical mechanism)
-- Evidence from multiple debugging commands that supports your conclusion
-- Confidence level of HIGH
-
-DO NOT stop debugging if you only have partial information or suspects. Continue investigating with additional commands to gather more evidence. A thorough analysis requires examining multiple aspects: driver details, stack traces, memory state, and system context.
-
-You MUST use the exact delimiter format specified in the system prompt above."""
+***CRITICAL:*** You ***MUST*** use the EXACT delimiter format specified in the system prompt above."""
     
     def get_final_prompt(self, all_citations: List[str], analyze_v_output: str) -> str:
         """Create final prompt for aggregating all citations into JSON output."""
         # Since all_citations now contains individual citations, number them properly
         citations_context = "\n".join([f"Citation {i+1}: {citation}" for i, citation in enumerate(all_citations)])
         
-        return f"""You are an expert Windows kernel debugging specialist. Your task is to provide a final comprehensive analysis.
+        return f"""You are an expert Windows kernel debugging specialist with a passion for education. Your task is to provide a comprehensive analysis that teaches kernel concepts to developers.
 
-## FINAL ANALYSIS TASK:
-You have completed the debugging process. Now aggregate ALL citations and provide a final analysis ***ALL CITATIONS PROVIDED HERE MUST ALSO BE PRESENT IN THE FINAL JSON OUTPUT***. The final goal is to identify the root cause of the crash with high confidence, and provide a detailed explanation of how you arrived at that conclusion, creating analysis and explanations of kernel level systems that less experienced users can learn from. You will use the available commands to gather information, and you will cite specific lines of output.
+***ROLE & EXPERTISE:***
+- Advanced knowledge of Windows kernel internals, driver architecture, and memory management
+- Expert at translating complex kernel concepts into understandable explanations
+- Specialized in creating educational content for developers transitioning to kernel-level work
 
-## INITIAL ANALYZE -V OUTPUT:
+***TARGET AUDIENCE:*** Developers/programmers familiar with application development but NEW to kernel-level concepts like IRQL, memory paging, driver communication, interrupt handling, and kernel data structures.
+
+## DEBUGGING DATA:
+
+### INITIAL ANALYZE -V OUTPUT:
 ```
 {analyze_v_output}
 ```
 
-## ALL CITATIONS COLLECTED ({len(all_citations)} total):
+### ALL CITATIONS COLLECTED ({len(all_citations)} total):
 {citations_context}
 
-## OUTPUT FORMAT:
-Provide your response in this exact format with two separate sections:
+## ***OUTPUT FORMAT:***
+
+You ***MUST*** provide your response in this EXACT format with TWO separate sections:
 
 **SECTION 1 - JSON CITATIONS:**
-CRITICAL: You must provide exactly {len(all_citations)} citations in the JSON array (one for each citation I provided above).
-Provide a JSON object with just the citations (no analysis field):
+***CRITICAL:*** You ***MUST*** provide EXACTLY {len(all_citations)} citations in the JSON array (one for each citation provided above).
+Provide a JSON object with just the citations (NO analysis field):
 ```json
 {{
     "citations": [
@@ -291,29 +303,54 @@ Provide a JSON object with just the citations (no analysis field):
 }}
 ```
 
-**SECTION 2 - ANALYSIS TEXT:**
-After the JSON, provide a comprehensive narrative analysis as plain text (not JSON):
+**SECTION 2 - EDUCATIONAL ANALYSIS TEXT:**
+After the JSON, provide a comprehensive EDUCATIONAL narrative analysis as PLAIN TEXT (NOT JSON):
 
-Understanding the Problem:
-[Your detailed explanation of what went wrong]
+***Understanding the Problem:***
+[Explain WHAT went wrong in terms a developer can understand. Define any kernel concepts encountered.]
 
-Technical Details:
-[Technical analysis of the crash data and evidence]
+***Kernel Concepts Explained:***
+[Explain relevant kernel concepts like IRQL levels, memory management, driver architecture, interrupt handling, etc. Use analogies when helpful.]
 
-Root Cause Analysis:
-[Your investigation methodology and reasoning]
+***Technical Deep Dive:***
+[Technical analysis of the crash data and evidence, with explanations of kernel structures and mechanisms involved.]
 
-Conclusion:
-[Final determination with confidence level (Low/Medium/High)]
+***Investigation Methodology:***
+[Explain HOW you analyzed the crash - what debugging techniques were used and WHY. Teach the debugging approach.]
 
-IMPORTANT: 
-- You MUST include exactly {len(all_citations)} citations in the JSON array - one for each citation provided above
-- Aggregate and improve ALL OF THE GIVEN citations in the JSON section  
-- Make sure every significant finding has a corresponding citation
-- The analysis should reference the citations but be written as flowing narrative text
-- Do not put the analysis in JSON format - it should be plain text after the JSON
+***Root Cause Analysis:***
+[Your final determination with clear explanation of the failure mechanism. Explain WHY this type of failure occurs.]
 
-REMINDER: Your citations array must contain {len(all_citations)} items - no more, no less."""
+***Learning Summary:***
+[Key takeaways about kernel concepts that developers should understand. Include common pitfalls and best practices.]
+
+***Conclusion:***
+[Final determination with confidence level (Low/Medium/High) and summary of lessons learned.]
+
+## ***YOUR IMMEDIATE TASK:***
+
+***STEP 1:*** Create JSON with EXACTLY {len(all_citations)} citations - aggregate and improve ALL given citations
+***STEP 2:*** Write EDUCATIONAL analysis explaining kernel concepts to developers new to kernel work
+***STEP 3:*** DEFINE technical terms like IRQL, paging, driver objects, etc. when first mentioned
+***STEP 4:*** Use ANALOGIES to relate kernel concepts to familiar application development concepts
+***STEP 5:*** Explain WHY this type of crash happens and HOW to prevent it
+***STEP 6:*** Include LEARNING POINTS about kernel debugging techniques used
+
+***EDUCATIONAL FOCUS:***
+- ***EXPLAIN*** kernel concepts as if teaching a class
+- ***DEFINE*** technical terms when first used (IRQL, DPC, memory paging, etc.)
+- ***RELATE*** kernel concepts to familiar programming concepts when possible
+- ***TEACH*** the debugging methodology, not just the results
+- ***HIGHLIGHT*** common developer mistakes that lead to these crashes
+- ***PROVIDE*** best practices for kernel-level development
+
+***IMPORTANT:*** 
+- ***ALL CITATIONS*** provided here ***MUST*** be present in the final JSON output
+- Make this a LEARNING EXPERIENCE about kernel internals
+- Assume reader knows programming but NOT kernel specifics
+- Your citations array ***MUST*** contain {len(all_citations)} items - NO MORE, NO LESS
+
+***REMINDER:*** Your citations array must contain {len(all_citations)} items - no more, no less."""
     
     def extract_citations_from_response(self, response: str) -> str:
         """Extract citations from LLM response using <CITATIONS></CITATIONS> delimiters."""
@@ -331,7 +368,6 @@ REMINDER: Your citations array must contain {len(all_citations)} items - no more
                     citation_lines.append(line)
             return "\n".join(citation_lines)
         
-        # Fallback to old method if delimiters not found
         logger.debug("Citations delimiters not found, using fallback method")
         lines = response.split('\n')
         citations = []
@@ -357,13 +393,11 @@ REMINDER: Your citations array must contain {len(all_citations)} items - no more
         
         if match:
             citations_content = match.group(1).strip()
-            # Parse each line as a separate citation
             for line in citations_content.split('\n'):
                 line = line.strip()
                 if line and re.match(r'^\[.*?\]\s*:\s*.+', line):
                     individual_citations.append(line)
         else:
-            # Fallback to old method if delimiters not found
             logger.debug("Citations delimiters not found, using fallback method")
             lines = response.split('\n')
             
@@ -383,7 +417,6 @@ REMINDER: Your citations array must contain {len(all_citations)} items - no more
         
         if match:
             command_content = match.group(1).strip()
-            # Return the first non-empty line
             for line in command_content.split('\n'):
                 line = line.strip()
                 if line:
@@ -398,7 +431,6 @@ REMINDER: Your citations array must contain {len(all_citations)} items - no more
             # Look for command patterns
             if line.startswith('!') or line.startswith('k') or line.startswith('lm'):
                 return line
-            # Check for STOP_DEBUGGING
             if line == self.stop_command:
                 return line
         
@@ -488,7 +520,6 @@ REMINDER: Your citations array must contain {len(all_citations)} items - no more
         if not requires_args:
             return True
         
-        # Validate the argument exists in vector store using document search
         logger.info(f"Validating argument '{argument}' for command '{command_alias}'")
         
         try:
@@ -507,7 +538,7 @@ REMINDER: Your citations array must contain {len(all_citations)} items - no more
             
         except (AttributeError, ValueError, RuntimeError) as e:
             logger.error(f"Error during argument validation: {e}")
-            return True  # Assume valid if search fails
+            return False  
     
     def reconstruct_command(self, command_alias: str, argument: str) -> str:
         """Reconstruct the actual WinDbg command from alias and argument."""
@@ -527,7 +558,6 @@ REMINDER: Your citations array must contain {len(all_citations)} items - no more
         
         command_template = command_info['command']
         
-        # If the command has arguments, replace placeholders
         if command_info.get('has_arguments', False) and argument != "NO_ARGUMENT":
             # Replace common placeholder patterns
             if '<driver>' in command_template:
@@ -558,9 +588,9 @@ REMINDER: Your citations array must contain {len(all_citations)} items - no more
         
         # Fallback: look for other bugcheck patterns
         fallback_patterns = [
-            r'BUGCHECK_STR:\s*(0x[A-Fa-f0-9]+)',  # BUGCHECK_STR: 0x4a
-            r'Bug[Cc]heck\s+(0x[A-Fa-f0-9]+)',   # Bugcheck 0x4a
-            r'Stop:\s*(0x[A-Fa-f0-9]+)'           # Stop: 0x4a
+            r'BUGCHECK_STR:\s*(0x[A-Fa-f0-9]+)',  
+            r'Bug[Cc]heck\s+(0x[A-Fa-f0-9]+)',   
+            r'Stop:\s*(0x[A-Fa-f0-9]+)'           
         ]
         
         for pattern in fallback_patterns:
@@ -605,7 +635,6 @@ REMINDER: Your citations array must contain {len(all_citations)} items - no more
             logger.error(f"DEBUG: JSON parsing failed with error: {e}")
             logger.error(f"DEBUG: Failed to parse JSON from response of length {len(response)}")
         
-        # Fallback: create basic structure
         logger.warning("DEBUG: Using fallback JSON structure")
         return {
             "citations": []
@@ -636,7 +665,6 @@ REMINDER: Your citations array must contain {len(all_citations)} items - no more
                         analysis_text = text_after_json[start_idx:].strip()
                         break
                 
-                # Clean up any markdown formatting
                 analysis_text = analysis_text.replace("**SECTION 2 - ANALYSIS TEXT:**", "").strip()
                 
                 if analysis_text and len(analysis_text) > 50:  # Reasonable minimum length
@@ -686,8 +714,6 @@ REMINDER: Your citations array must contain {len(all_citations)} items - no more
                         wrapped_lines.append(current_line)
                         current_line = word
                     else:
-                        # Single word is longer than max_line_length
-                        # Keep it as-is rather than breaking mid-word
                         wrapped_lines.append(word)
                         current_line = ""
             
@@ -697,4 +723,3 @@ REMINDER: Your citations array must contain {len(all_citations)} items - no more
         
         return '\n'.join(wrapped_lines)
     
-    # Note: _clean_json_formatting method removed since we now use separate text files for analysis
