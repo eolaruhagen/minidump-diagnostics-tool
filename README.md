@@ -33,6 +33,8 @@ The agent follows a structured pipeline for debugging Windows kernel crashes:
 
 ## Architecture
 
+
+- View demo and architecture explanation [Here][youtube_link]
 - View Full LucidChart [Here][lucid_link] 
 
 ![AltText](user_docs/agent_lucidchart.png)
@@ -102,3 +104,5 @@ python ./src/main.py
 [windows_sdk]: https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/
 
 [lucid_link]: https://lucid.app/lucidchart/8ca3e290-6d9f-4a2e-96d0-68932dd0a9a5/edit?viewport_loc=-1151%2C-329%2C3930%2C2128%2C0_0&invitationId=inv_ede676a2-a4c0-4c49-a5ff-7eade5cc7633
+
+[youtube_link]: https://www.youtube.com/watch?v=zh1NkTLgZpQ
